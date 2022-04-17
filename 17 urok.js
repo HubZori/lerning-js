@@ -1,21 +1,39 @@
+var min = '2022-04-17T00:00';
+var max = '2022-10-17T00:00';
 
+mobiscroll.datepicker('#demo-booking-single', {
+    controls: ['calendar'],
+    min: min,
+    max: max,
+    onPageLoading: function (event, inst) {
+        getPrices(event.firstDay, function callback(bookings) {
+            inst.setOptions({
+                labels: bookings.labels,
+                invalid: bookings.invalid
+            });
+        });
+    }
+});
+                                  
+function getPrices(d, callback) {
+    var invalid = [],
+        labels = [];
 
-const ptp = 'ZORI';
+    mobiscroll.util.http.getJson(MS.trialUrl + 'getprices/?year=' + d.getFullYear() + '&month=' + d.getMonth(), function (bookings) {
+        for (var i = 0; i < bookings.length; ++i) {
+            var booking = bookings[i],
+                d = new Date(booking.d);
 
-console.log(ptp.toLocaleLowerCase()); // превращает строку в нижний регистр
-console.log(ptp.toUpperCase());       // превращает строку в верхний регистр
-
-   const Arab = 'Trap Rap'
-   console.log(Arab.indexOf('Rap'));    //поиск код строки 
-
-
-   const low = "Helo World";
-   console.log(low.slice(3, 9)); //3 начало строки 9 конец строки того чего нам необходимо 
-
-
-   const num = 16.36958;
-   console.log(Math.round(num)); //округление числа до ближайшего челого 
-
-   const test = "13.7px";
-   console.log(parseInt(test));//перевод числа в другое систему исчисления  "13"
-   console.log(parseFloat(test));// возврашения значения с плавающей точкой  "13.7" 
+            if (booking.price > 0) {
+                labels.push({
+                    start: d,
+                    title: '$' + booking.price,
+                    textColor: '#e1528f'
+                });
+            } else {
+                invalid.push(d);
+            }
+        }
+        callback({ labels: labels, invalid: invalid });
+    }, 'jsonp');
+}
